@@ -1,14 +1,12 @@
-// LiquidCrystal - Version: Latest 
 #include <LiquidCrystal.h>
-
-#include "FreeRTOS.h"
+#include <Arduino_FreeRTOS.h>
 #include "queue.h"
 #include <DHT.h>
 
 #define DHTPIN 2     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22
 DHT dht(DHTPIN, DHTTYPE); // Initialize DHT sensor
-
+LiquidCrystal lcd(8,9,10,11,12,13);
 typedef struct
 {
   float temperature;
@@ -20,6 +18,8 @@ QueueHandle_t queue_1; //Handle of the queue created
 void setup() 
 {
   Serial.begin(9600);
+  lcd.begin(16, 2);
+  lcd.clear();
   queue_1 = xQueueCreate(3, sizeof(Data_t));
   if (queue_1 == NULL) 
   {
@@ -59,8 +59,6 @@ void lcd_task(void *pvParameters)
   Data_t datatoreceive;
   while(1) 
   {
-    LiquidCrystal lcd(12, 11, 5, 4, 3, 2); // Pins RST E D4 D5 D6 D7
-    lcd.begin(16, 2);
     xStatus = xQueueReceive(queue_1, &datatoreceive, portMAX_DELAY);
     
     if(xStatus == pdPASS)
@@ -71,11 +69,13 @@ void lcd_task(void *pvParameters)
       lcd.setCursor(0, 1);
       lcd.print("HUMIDITY(%): ");
       lcd.print(datatoreceive.humidity);
+      delay(1000);
     }
     else
     {
       lcd.setCursor(0,0); 
       lcd.print("Waiting for data");
+      delay(1000);
     }
   }
 }
