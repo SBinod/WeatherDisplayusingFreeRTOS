@@ -1,5 +1,7 @@
-#include "FreeRTOS.h"
+// LiquidCrystal - Version: Latest 
 #include <LiquidCrystal.h>
+
+#include "FreeRTOS.h"
 #include "queue.h"
 #include <DHT.h>
 
@@ -9,8 +11,8 @@ DHT dht(DHTPIN, DHTTYPE); // Initialize DHT sensor
 
 typedef struct
 {
-  temperature,
-  humidity,
+  float temperature;
+  float humidity;
 }Data_t;
 
 QueueHandle_t queue_1; //Handle of the queue created
@@ -18,8 +20,6 @@ QueueHandle_t queue_1; //Handle of the queue created
 void setup() 
 {
   Serial.begin(9600);
-  LiquidCrystal lcd(7, 8, 9, 10, 11, 12); // Pins RST E D4 D5 D6 D7
-  lcd.begin(16, 2);
   queue_1 = xQueueCreate(3, sizeof(Data_t));
   if (queue_1 == NULL) 
   {
@@ -30,7 +30,7 @@ void setup()
   vTaskStartScheduler(); //starts the scheduler
 }
 
-void temp_task(void * pvParameters) 
+void temp_task(void *pvParameters) 
 {
   BaseType_t xStatus;
   const TickType_t xTickstoWait = pdMS_TO_TICKS(500);
@@ -43,24 +43,26 @@ void temp_task(void * pvParameters)
     xStatus = xQueueSend(queue_1, &datatosend, xTickstoWait);
     if(xStatus != pdPASS)
     {
-      Serial.println("The data could not be sent to the Queue...")
+      Serial.println("The data could not be sent to the Queue...");
     }
     else
     {
-      Serial.print("Sent the data to the queue")
+      Serial.print("Sent the data to the queue");
     }
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
 
-void lcd_task(void * pvParameters) 
+void lcd_task(void *pvParameters) 
 {
   BaseType_t xStatus;
   Data_t datatoreceive;
-
   while(1) 
   {
-    xStatus = xQueueReceive(queue_1, &datatoreceive, portMAX_DELAY)  
+    LiquidCrystal lcd(12, 11, 5, 4, 3, 2); // Pins RST E D4 D5 D6 D7
+    lcd.begin(16, 2);
+    xStatus = xQueueReceive(queue_1, &datatoreceive, portMAX_DELAY);
+    
     if(xStatus == pdPASS)
     {
       lcd.setCursor(0, 0);
